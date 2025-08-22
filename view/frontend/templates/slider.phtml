@@ -1,0 +1,77 @@
+<?php
+/** @var $block \Digitalradium\BestsellerSlider\Block\Bestseller */
+$products = $block->getProducts();
+$productRepository = \Magento\Framework\App\ObjectManager::getInstance()
+    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+
+$amastyHelper = \Magento\Framework\App\ObjectManager::getInstance()
+    ->get(\Amasty\HidePrice\Helper\Data::class);
+ ?>
+
+<div class="hot-buys-section custom_slider cs-label">
+    <div class="glider-contain">
+        <div class="best-seller">
+            <?php foreach ($products as $product): 
+                    $imageHelper = $this->helper(\Magento\Catalog\Helper\Image::class);
+                    $imageUrl = $imageHelper->init($product, 'product_page_image_medium')->getUrl(); 
+                    if (!($product instanceof \Magento\Catalog\Model\Product)) {
+                        $productId = $product->getId(); // or $product['product_id'] depending on the source
+                        $product = $productRepository->getById($productId);
+                    }
+
+                    $isPriceHidden = $amastyHelper->isNeedHidePrice($product); ?>
+                <div class="product-slide">
+                    <a href="<?= $product->getProductUrl() ?>">
+                      <div class="image-wrap overlay-container">
+                        <picture >
+                            <source srcset="<?= $imageUrl ?>" type="image/webp">
+                            <img src="<?= $imageUrl ?>" loading="lazy" alt="<?= $product->getName() ?>" />
+                        </picture>
+                    <?php if ($isPriceHidden) : ?>
+                    <div class="image-overlay">
+                            <span class="overlay-text">See Price in Cart</span>
+                        </div>
+                    <?php endif; ?>
+
+                     </div>
+                        <div class="card-content">
+                            <h4><?= $product->getName() ?></h4>
+                            <?php if ($isPriceHidden) : ?>
+				<div class="button-wrap">
+					<button class="am-popup-trigger" data-product-id="<?php echo $product->getId(); ?>">Contact Us</button>
+				</div>           
+			    <?php else: ?>
+
+                 <p class="price"><?= $block->getCurrencySymbol() ?> <?= $block->escapeHtml($product->getFinalPrice()) ?></p>
+                           <?php endif; ?>
+                            <div class='ship-label-wrapper'>
+                               <?php if ($isPriceHidden) : ?>
+                                <div class="stocklabel">
+                                  <span class="in-stock-label inline-block text-xs uppercase font-medium py-1 px-2 rounded-md text-white stock
+                available bg-color-black">See Price In Cart</span>
+                                </div>
+                              <?php endif; ?>
+                                <?php $shippingLabel = $product->getData('shipping_label'); ?>
+                                  <div class="stocklabel cs-column">
+                                    <?php
+                                    if($stockLabelBlock = $this->getLayout()->createBlock('BeaverTools\StockLabels\Block\StockLabel')){
+                                        $stockLabelBlock->setProductId($product->getId());
+                                        $stockLabelBlock->setTemplate('BeaverTools_StockLabels::stock_label.phtml');
+                                        echo $stockLabelBlock->toHtml();
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+                            <form data-role="tocart-form" action="<?= $block->getUrl('checkout/cart/add') ?>" method="post">
+                                <input type="hidden" name="product" value="<?= $product->getId() ?>" />
+                                <input type="hidden" name="form_key" value="<?= $block->getFormKey() ?>" />
+                                <button type="submit" class="add-to-cart-btn">ADD TO CART</button>
+                            </form>
+                        </div>
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="bs-dots"></div>
+    </div>
+</div>
